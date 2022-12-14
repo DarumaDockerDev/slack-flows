@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { redis } from '@/lib/upstash';
-import { getAuthedUser } from '@/lib/slack';
+import { getAuthedTeam } from '@/lib/slack';
 
 export default async (req: NextRequest) => {
-  const flowUser = req.nextUrl.searchParams.get('state');
+  const flowsUser = req.nextUrl.searchParams.get('state');
   const code = req.nextUrl.searchParams.get('code');
 
-  if (!flowUser || !code) {
+  if (!flowsUser || !code) {
     return new NextResponse('Bad request', {status: 400});
   }
 
   try {
-    const d = await redis.del(flowUser);
+    const d = await redis.del(flowsUser);
     // Return if flow user not found in Redis
     if (d !== 1) {
       return new NextResponse('Expired authorization', {status: 400});
@@ -21,14 +21,14 @@ export default async (req: NextRequest) => {
   }
 
   try {
-    const authedUser = await getAuthedUser(code);
+    const authedTeam = await getAuthedTeam(code);
 
     const pipeline = redis.pipeline();
-    pipeline.set(`${authedUser.user_id}:token`, authedUser.access_token);
-    pipeline.hset(flowUser, {
-      [`${authedUser.user_id}`]: {
-        user_name: authedUser.user_name,
-        team: authedUser.team
+    pipeline.set(`${authedTeam.user_id}:token`, authedTeam.access_token);
+    pipeline.hset(flowsUser, {
+      [`${authedTeam.user_id}`]: {
+        team_id: authedTeam.team_id,
+        team: authedTeam.team
       }
     });
     await pipeline.exec();

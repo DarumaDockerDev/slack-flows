@@ -3,10 +3,15 @@ import { redis } from '@/lib/upstash';
 import { REDIRECT_URI } from '@/lib/slack';
 
 export default async (req: NextRequest) => {
-  const flowUser = req.nextUrl.searchParams.get('flow_user') as string;
+  const flowUser = req.nextUrl.searchParams.get('flow_user');
+
+  if (!flowUser) {
+    return new NextResponse('Bad request', {status: 400});
+  }
 
   try {
-    await redis.set(flowUser, true, {'ex': 10 * 60});
+    let users = await redis.hgetall(flowUser);
+    return NextResponse.json(users);
   } catch(e: any) {
     return new NextResponse(e.toString(), {status: 500});
   }
