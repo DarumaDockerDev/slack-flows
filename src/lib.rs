@@ -65,6 +65,35 @@ pub struct Event {
     pub event: SlackMessage,
 }
 
+pub fn revoke_listeners() {
+    unsafe {
+        let mut flows_user = Vec::<u8>::with_capacity(100);
+        let c = get_flows_user(flows_user.as_mut_ptr());
+        flows_user.set_len(c as usize);
+        let flows_user = String::from_utf8(flows_user).unwrap();
+
+        let mut flow_id = Vec::<u8>::with_capacity(100);
+        let c = get_flow_id(flow_id.as_mut_ptr());
+        if c == 0 {
+            panic!("Failed to get flow id");
+        }
+        flow_id.set_len(c as usize);
+        let flow_id = String::from_utf8(flow_id).unwrap();
+
+        let mut writer = Vec::new();
+        let res = request::get(
+            format!("{}/{}/{}/revoke", SLACK_API_PREFIX, flows_user, flow_id),
+            &mut writer,
+        )
+        .unwrap();
+
+        match res.status_code().is_success() {
+            true => (),
+            false => panic!("Failed to register the trigger"),
+        }
+    }
+}
+
 pub fn listen_to_channel(team_name: &str, channel_name: &str) -> Option<SlackMessage> {
     unsafe {
         let mut flows_user = Vec::<u8>::with_capacity(100);
@@ -74,20 +103,26 @@ pub fn listen_to_channel(team_name: &str, channel_name: &str) -> Option<SlackMes
 
         let mut flow_id = Vec::<u8>::with_capacity(100);
         let c = get_flow_id(flow_id.as_mut_ptr());
+        if c == 0 {
+            panic!("Failed to get flow id");
+        }
         flow_id.set_len(c as usize);
         let flow_id = String::from_utf8(flow_id).unwrap();
 
         let mut writer = Vec::new();
-        request::get(
+        let res = request::get(
             format!(
-                "{}/{}/listen/{}?team={}&channel={}",
+                "{}/{}/{}/listen?team={}&channel={}",
                 SLACK_API_PREFIX, flows_user, flow_id, team_name, channel_name
             ),
             &mut writer,
         )
         .unwrap();
 
-        serde_json::from_slice::<SlackMessage>(&writer).ok()
+        match res.status_code().is_success() {
+            true => serde_json::from_slice::<SlackMessage>(&writer).ok(),
+            false => panic!("Failed to register the trigger"),
+        }
     }
 }
 

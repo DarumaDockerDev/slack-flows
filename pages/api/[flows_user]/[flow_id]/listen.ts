@@ -36,7 +36,11 @@ export default async (req: NextRequest) => {
             return new NextResponse('Channel not found', {status: 400});
         }
 
-        await redis.hset(`${ch.id}:trigger`, {[flowId]: {
+        await redis.hset(`${ch.id}:ch:trigger`, {[flowId]: {
+          flows_user: flowsUser
+        }});
+
+        await redis.hset(`${flowId}:ch:listener`, {[ch.id]: {
           flows_user: flowsUser
         }});
 
