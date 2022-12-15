@@ -5,11 +5,10 @@ import { getChannelByName } from '@/lib/slack';
 export default async (req: NextRequest) => {
     const flowsUser = req.nextUrl.searchParams.get('flows_user');
     const flowId = req.nextUrl.searchParams.get('flow_id');
-    const wasmFile = req.nextUrl.searchParams.get('wasm_file');
     const team = req.nextUrl.searchParams.get('team');
     const channel = req.nextUrl.searchParams.get('channel');
   
-    if (!flowsUser || !flowId || !wasmFile || !team || !channel) {
+    if (!flowsUser || !flowId || !team || !channel) {
         return new NextResponse('Bad request', {status: 400});
     }
   
@@ -38,8 +37,7 @@ export default async (req: NextRequest) => {
         }
 
         await redis.hset(`${ch.id}:trigger`, {[flowId]: {
-          flows_user: flowsUser,
-          wasm_file: wasmFile
+          flows_user: flowsUser
         }});
 
         return NextResponse.json({

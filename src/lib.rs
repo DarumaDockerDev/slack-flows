@@ -6,7 +6,6 @@ const SLACK_API_PREFIX: &str = "http://127.0.0.1:3001/api";
 extern "C" {
     fn get_flows_user(p: *mut u8) -> i32;
     fn get_flow_id(p: *mut u8) -> i32;
-    fn get_wasm_file(p: *mut u8) -> i32;
     fn get_event_body_length() -> i32;
     fn get_event_body(p: *mut u8) -> i32;
     fn set_flows(p: *const u8, len: i32);
@@ -29,7 +28,7 @@ pub unsafe fn auth() {
 */
 
 #[no_mangle]
-pub unsafe fn flow() {
+pub unsafe fn message() {
     if let Some(event) = get_event() {
         let mut writer = Vec::new();
         request::get(
@@ -78,21 +77,11 @@ pub fn message_from_channel(team_name: &str, channel_name: &str) -> Option<Slack
         flow_id.set_len(c as usize);
         let flow_id = String::from_utf8(flow_id).unwrap();
 
-        let mut wasm_file = Vec::<u8>::with_capacity(100);
-        let c = get_wasm_file(wasm_file.as_mut_ptr());
-        wasm_file.set_len(c as usize);
-        let wasm_file = String::from_utf8(wasm_file).unwrap();
-
         let mut writer = Vec::new();
         request::get(
             format!(
-                "{}/{}/listen/{}/{}?team={}&channel={}",
-                SLACK_API_PREFIX,
-                flows_user,
-                flow_id,
-                urlencoding::encode(&wasm_file),
-                team_name,
-                channel_name
+                "{}/{}/listen/{}?team={}&channel={}",
+                SLACK_API_PREFIX, flows_user, flow_id, team_name, channel_name
             ),
             &mut writer,
         )
