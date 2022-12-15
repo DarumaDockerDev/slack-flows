@@ -31,7 +31,7 @@ pub unsafe fn auth() {
 pub unsafe fn message() {
     if let Some(event) = message_from_channel() {
         let mut writer = Vec::new();
-        request::get(
+        let res = request::get(
             format!("{}/event/{}", SLACK_API_PREFIX, event.channel),
             &mut writer,
         )
@@ -43,8 +43,10 @@ pub unsafe fn message() {
         println!("{}", String::from_utf8_lossy(&writer));
         */
 
-        if let Ok(flows) = String::from_utf8(writer) {
-            set_flows(flows.as_ptr(), flows.len() as i32);
+        if res.status_code().is_success() {
+            if let Ok(flows) = String::from_utf8(writer) {
+                set_flows(flows.as_ptr(), flows.len() as i32);
+            }
         }
     }
 }

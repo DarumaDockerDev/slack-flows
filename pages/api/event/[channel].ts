@@ -9,7 +9,7 @@ export default async (req: NextRequest) => {
     }
   
     try {
-        let allFlows = await redis.hgetall(`${channel}:trigger`);
+        let allFlows = await redis.hgetall(`${channel}:ch:trigger`);
 
         if (allFlows) {
           let flowsArray = [];
