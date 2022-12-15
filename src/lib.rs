@@ -29,7 +29,7 @@ pub unsafe fn auth() {
 
 #[no_mangle]
 pub unsafe fn message() {
-    if let Some(event) = get_event() {
+    if let Some(event) = message_from_channel() {
         let mut writer = Vec::new();
         request::get(
             format!("{}/event/{}", SLACK_API_PREFIX, event.channel),
@@ -65,7 +65,7 @@ pub struct Event {
     pub event: SlackMessage,
 }
 
-pub fn message_from_channel(team_name: &str, channel_name: &str) -> Option<SlackMessage> {
+pub fn listen_to_channel(team_name: &str, channel_name: &str) -> Option<SlackMessage> {
     unsafe {
         let mut flows_user = Vec::<u8>::with_capacity(100);
         let c = get_flows_user(flows_user.as_mut_ptr());
@@ -111,7 +111,7 @@ pub fn send_message_to_channel(team_name: &str, channel_name: &str, text: String
     }
 }
 
-pub fn get_event() -> Option<SlackMessage> {
+pub fn message_from_channel() -> Option<SlackMessage> {
     unsafe {
         let l = get_event_body_length();
         let mut event_body = Vec::<u8>::with_capacity(l as usize);
