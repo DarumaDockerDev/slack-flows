@@ -9,6 +9,7 @@ extern "C" {
     fn get_event_body_length() -> i32;
     fn get_event_body(p: *mut u8) -> i32;
     fn set_flows(p: *const u8, len: i32);
+    fn set_error_log(p: *const u8, len: i32);
     // fn redirect_to(p: *const u8, len: i32);
 }
 
@@ -91,7 +92,9 @@ pub fn revoke_listeners() {
 
         match res.status_code().is_success() {
             true => (),
-            false => panic!("Failed to register the trigger"),
+            false => {
+                set_error_log(writer.as_ptr(), writer.len() as i32);
+            }
         }
     }
 }
@@ -123,7 +126,10 @@ pub fn listen_to_channel(team_name: &str, channel_name: &str) -> Option<SlackMes
 
         match res.status_code().is_success() {
             true => serde_json::from_slice::<SlackMessage>(&writer).ok(),
-            false => panic!("Failed to register the trigger"),
+            false => {
+                set_error_log(writer.as_ptr(), writer.len() as i32);
+                None
+            }
         }
     }
 }

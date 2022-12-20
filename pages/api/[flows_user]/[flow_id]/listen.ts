@@ -26,10 +26,10 @@ export default async (req: NextRequest) => {
         }
     
         if (!teamId) {
-            return new NextResponse('Team has not been authorized', {status: 400});
+            return new NextResponse(`Workspace \`${team}\` has not been authorized, you need to [install the App](https://slack-flows.vercel.app/api/%FLOWS_USER%/access) first`, {status: 400});
         }
         if (!accessToken) {
-            return new NextResponse('User has not been authorized', {status: 400});
+            return new NextResponse(`User has not been authorized, you need to [install the App](https://slack-flows.vercel.app/api/%FLOWS_USER%/access) to workspace \`${team}\` first`, {status: 400});
         }
         let ch = await getChannelByName(accessToken.toString(), teamId, channel);
         if (!ch) {
