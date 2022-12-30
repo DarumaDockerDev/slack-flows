@@ -142,18 +142,17 @@ pub fn send_message_to_channel(team_name: &str, channel_name: &str, text: String
         let flows_user = String::from_utf8(flows_user).unwrap();
 
         let mut writer = Vec::new();
-        let res = request::post(
+        if let Ok(res) = request::post(
             format!(
                 "{}/{}/send?team={}&channel={}",
                 SLACK_API_PREFIX, flows_user, team_name, channel_name
             ),
             text.as_bytes(),
             &mut writer,
-        )
-        .unwrap();
-
-        if !res.status_code().is_success() {
-            set_error_log(writer.as_ptr(), writer.len() as i32);
+        ) {
+            if !res.status_code().is_success() {
+                set_error_log(writer.as_ptr(), writer.len() as i32);
+            }
         }
     }
 }

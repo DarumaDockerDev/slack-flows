@@ -1,4 +1,4 @@
-export const REDIRECT_URI='redirect_uri=https%3A%2F%2F05ce-34-84-78-213.jp.ngrok.io%2Fapi%2Fauth'
+export const REDIRECT_URI='redirect_uri=https%3A%2F%2F4720-34-84-78-213.jp.ngrok.io%2Fapi%2Fauth'
 
 export async function getAuthedTeam(code: string) {
     let res = await fetch(`https://slack.com/api/oauth.v2.access?client_id=${process.env.SLACK_CLIENT_ID}&client_secret=${process.env.SLACK_CLIENT_SECRET}&code=${code}&${REDIRECT_URI}`);
