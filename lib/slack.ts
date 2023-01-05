@@ -1,3 +1,6 @@
+import fs from 'fs';
+import FormData from 'form-data';
+
 export const REDIRECT_URI='redirect_uri=https%3A%2F%2F4720-34-84-78-213.jp.ngrok.io%2Fapi%2Fauth'
 
 export async function getAuthedTeam(code: string) {
@@ -58,5 +61,21 @@ export async function sendMessageToChannel(accessToken: string, channel: string,
       channel,
       text
     })
+  });
+}
+
+export async function uploadFileToChannel(accessToken: string, channel: string, file: any) {
+  let formData = new FormData();
+  formData.append('channels', channel);
+  formData.append('filename', file.originalFilename);
+  formData.append('filetype', file.mimetype);
+  formData.append('file', fs.createReadStream(file.filepath));
+
+  await fetch('https://slack.com/api/files.upload', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: formData as any
   });
 }

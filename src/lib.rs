@@ -2,11 +2,11 @@ use http_req::{
     request::{self, Method, Request},
     uri::Uri,
 };
+use rand::{distributions::Alphanumeric, Rng};
 use serde::{Deserialize, Serialize};
 use std::io::{self, Write};
 
 const SLACK_API_PREFIX: &str = "http://127.0.0.1:3001/api";
-const BOUNDARY: &'static str = "------------------------186107681282571523085017";
 
 extern "C" {
     fn get_flows_user(p: *mut u8) -> i32;
@@ -183,7 +183,7 @@ pub fn upload_file(
     team_name: &str,
     channel_name: &str,
     file_name: &str,
-    mime_type: &str,
+    file_type: &str,
     file_bytes: Vec<u8>,
 ) {
     unsafe {
@@ -192,7 +192,16 @@ pub fn upload_file(
         flows_user.set_len(c as usize);
         let flows_user = String::from_utf8(flows_user).unwrap();
 
-        if let Ok(file_part) = compose_file_part(channel_name, file_name, mime_type, file_bytes) {
+        let boundary: String = rand::thread_rng()
+            .sample_iter(&Alphanumeric)
+            .take(15)
+            .map(char::from)
+            .collect();
+        let boundary = format!("------------------------{}", boundary);
+
+        if let Ok(file_part) =
+            compose_file_part(&boundary, channel_name, file_name, file_type, file_bytes)
+        {
             let mut writer = Vec::new();
 
             let uri = format!(
@@ -204,7 +213,7 @@ pub fn upload_file(
                 .method(Method::POST)
                 .header(
                     "Content-Type",
-                    &format!("multipart/form-data; boundary={}", BOUNDARY),
+                    &format!("multipart/form-data; boundary={}", boundary),
                 )
                 .header("Content-Length", &file_part.len())
                 .body(&file_part)
@@ -219,27 +228,28 @@ pub fn upload_file(
 }
 
 fn compose_file_part(
+    boundary: &str,
     channel: &str,
     file_name: &str,
-    mime_type: &str,
+    file_type: &str,
     file_bytes: Vec<u8>,
 ) -> io::Result<Vec<u8>> {
     let mut data = Vec::new();
-    write!(data, "--{}\r\n", BOUNDARY)?;
+    write!(data, "--{}\r\n", boundary)?;
     write!(data, "Content-Disposition: form-data; name=\"channel\"\r\n")?;
     write!(data, "\r\n{}\r\n", channel)?;
-    write!(data, "--{}\r\n", BOUNDARY)?;
+    write!(data, "--{}\r\n", boundary)?;
     write!(
         data,
         "Content-Disposition: form-data; name=\"file\"; filename=\"{}\"\r\n",
         file_name
     )?;
-    write!(data, "Content-Type: {}\r\n\r\n", mime_type)?;
+    write!(data, "Content-Type: {}\r\n\r\n", file_type)?;
 
     data.extend_from_slice(&file_bytes);
 
     write!(data, "\r\n")?; // The key thing you are missing
-    write!(data, "--{}--\r\n", BOUNDARY)?;
+    write!(data, "--{}--\r\n", boundary)?;
 
     Ok(data)
 }

@@ -1,5 +1,5 @@
 import { redis } from '@/lib/upstash';
-import { getChannelByName, sendMessageToChannel } from '@/lib/slack';
+import { getChannelByName, uploadFileToChannel } from '@/lib/slack';
 import formidable from 'formidable';
 
 export default async (req: any, res: any, next: any) => {
@@ -18,8 +18,6 @@ export default async (req: any, res: any, next: any) => {
         keepExtensions: true
     });
 
-    console.log(req.headers);
-
     const promise = new Promise((resolve, reject) => {
       form.parse(req, async (err, fields, files) => {
           if (err) {
@@ -31,9 +29,10 @@ export default async (req: any, res: any, next: any) => {
     });
 
     await promise.then(async (x) => {
-        let {fields, files} = x as any;
-        console.log(fields);
-        console.log(files);
+        let {files} = x as any;
+        if (!files.file) {
+            return res.status(400).end(`no 'file' found`);
+        }
 
         try {
             let allAuthedTeam = await redis.hgetall(flowsUser);
@@ -59,7 +58,7 @@ export default async (req: any, res: any, next: any) => {
                 return res.status(400).end('Channel not found');
             }
 
-            // await sendMessageToChannel(accessToken.toString(), ch.id, text);
+            await uploadFileToChannel(accessToken.toString(), ch.id, files.file);
             res.end();
         } catch(e: any) {
             return res.status(500).end(e.toString());
