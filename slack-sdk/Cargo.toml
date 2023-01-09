@@ -1,6 +1,6 @@
 [package]
 name = "slack-flows"
-version = "0.1.9"
+version = "0.1.10"
 edition = "2021"
 license = "MIT/Apache-2.0"
 description = "Slack extension for flows.network"
@@ -8,6 +8,9 @@ description = "Slack extension for flows.network"
 [lib]
 path = "src/lib.rs"
 crate-type = ["lib", "cdylib"]
+
+[package.metadata.docs.rs]
+rustc-args = ["--target", "wasm32-wasi"]
 
 [dependencies]
 http_req_wasi = "0.10"

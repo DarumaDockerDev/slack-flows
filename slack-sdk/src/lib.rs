@@ -1,3 +1,4 @@
+#![doc(html_no_source)]
 use http_req::{
     request::{self, Method, Request},
     uri::Uri,
