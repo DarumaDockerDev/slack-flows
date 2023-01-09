@@ -13,48 +13,8 @@ extern "C" {
     fn get_flow_id(p: *mut u8) -> i32;
     fn get_event_body_length() -> i32;
     fn get_event_body(p: *mut u8) -> i32;
-    fn set_flows(p: *const u8, len: i32);
     fn set_error_log(p: *const u8, len: i32);
     // fn redirect_to(p: *const u8, len: i32);
-}
-
-/*
-#[no_mangle]
-pub unsafe fn auth() {
-    let mut s = Vec::<u8>::with_capacity(100);
-    let c = get_flows_user(s.as_mut_ptr());
-    s.set_len(c as usize);
-    let _url = format!(
-        "https://05ce-34-84-78-213.jp.ngrok.io/api/{}/access",
-        String::from_utf8(s).unwrap()
-    );
-
-    // redirect_to(url.as_ptr(), url.len() as i32);
-}
-*/
-
-#[no_mangle]
-pub unsafe fn message() {
-    if let Some(event) = message_from_channel() {
-        let mut writer = Vec::new();
-        let res = request::get(
-            format!("{}/event/{}", SLACK_API_PREFIX, event.channel),
-            &mut writer,
-        )
-        .unwrap();
-
-        /*
-        println!("Status: {} {}", res.status_code(), res.reason());
-        println!("Headers {}", res.headers());
-        println!("{}", String::from_utf8_lossy(&writer));
-        */
-
-        if res.status_code().is_success() {
-            if let Ok(flows) = String::from_utf8(writer) {
-                set_flows(flows.as_ptr(), flows.len() as i32);
-            }
-        }
-    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
