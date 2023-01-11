@@ -9,8 +9,15 @@ use std::io::{self, Write};
 const SLACK_API_PREFIX: &str = "http://127.0.0.1:3001/api";
 
 extern "C" {
+    // Flag if current running is for listening(1) or message receving(0)
+    fn is_listening() -> i32;
+
+    // Return the user id of the flows platform
     fn get_flows_user(p: *mut u8) -> i32;
+
+    // Return the flow id
     fn get_flow_id(p: *mut u8) -> i32;
+
     fn get_event_body_length() -> i32;
     fn get_event_body(p: *mut u8) -> i32;
     fn set_error_log(p: *const u8, len: i32);
@@ -64,37 +71,43 @@ pub fn revoke_listeners() {
     }
 }
 
-pub fn listen_to_channel(team_name: &str, channel_name: &str) -> Option<SlackMessage> {
+pub fn channel_msg_received(team_name: &str, channel_name: &str) -> Option<SlackMessage> {
     unsafe {
-        let mut flows_user = Vec::<u8>::with_capacity(100);
-        let c = get_flows_user(flows_user.as_mut_ptr());
-        flows_user.set_len(c as usize);
-        let flows_user = String::from_utf8(flows_user).unwrap();
+        match is_listening() {
+            // Calling register
+            1 => {
+                let mut flows_user = Vec::<u8>::with_capacity(100);
+                let c = get_flows_user(flows_user.as_mut_ptr());
+                flows_user.set_len(c as usize);
+                let flows_user = String::from_utf8(flows_user).unwrap();
 
-        let mut flow_id = Vec::<u8>::with_capacity(100);
-        let c = get_flow_id(flow_id.as_mut_ptr());
-        if c == 0 {
-            panic!("Failed to get flow id");
-        }
-        flow_id.set_len(c as usize);
-        let flow_id = String::from_utf8(flow_id).unwrap();
+                let mut flow_id = Vec::<u8>::with_capacity(100);
+                let c = get_flow_id(flow_id.as_mut_ptr());
+                if c == 0 {
+                    panic!("Failed to get flow id");
+                }
+                flow_id.set_len(c as usize);
+                let flow_id = String::from_utf8(flow_id).unwrap();
 
-        let mut writer = Vec::new();
-        let res = request::get(
-            format!(
-                "{}/{}/{}/listen?team={}&channel={}",
-                SLACK_API_PREFIX, flows_user, flow_id, team_name, channel_name
-            ),
-            &mut writer,
-        )
-        .unwrap();
+                let mut writer = Vec::new();
+                let res = request::get(
+                    format!(
+                        "{}/{}/{}/listen?team={}&channel={}",
+                        SLACK_API_PREFIX, flows_user, flow_id, team_name, channel_name
+                    ),
+                    &mut writer,
+                )
+                .unwrap();
 
-        match res.status_code().is_success() {
-            true => serde_json::from_slice::<SlackMessage>(&writer).ok(),
-            false => {
-                set_error_log(writer.as_ptr(), writer.len() as i32);
-                None
+                match res.status_code().is_success() {
+                    true => serde_json::from_slice::<SlackMessage>(&writer).ok(),
+                    false => {
+                        set_error_log(writer.as_ptr(), writer.len() as i32);
+                        None
+                    }
+                }
             }
+            _ => message_from_channel(),
         }
     }
 }

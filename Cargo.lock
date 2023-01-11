@@ -134,7 +134,7 @@ dependencies = [
 
 [[package]]
 name = "slack-flows"
-version = "0.1.14"
+version = "0.1.15"
 dependencies = [
  "http_req_wasi",
  "rand",

@@ -11,7 +11,23 @@ export default async (req: NextRequest) => {
     if (!flowsUser || !flowId || !team || !channel) {
         return new NextResponse('Bad request', {status: 400});
     }
+
+    // First, revoke old listeners for the flow
+    try {
+        let allListeners = await redis.hgetall(`${flowId}:ch:listener`);
+        const pipeline = redis.pipeline();
+        for (let channelId in allListeners) {
+            pipeline.hdel(`${channelId}:ch:trigger`, flowId);
+        }
+    
+        pipeline.del(`${flowId}:ch:listener`);
+
+        await pipeline.exec();
+    } catch(e: any) {
+        return new NextResponse(e.toString(), {status: 500});
+    }
   
+    // Register the listner
     try {
         let allAuthedTeam = await redis.hgetall(flowsUser);
         let teamId;
@@ -48,7 +64,7 @@ export default async (req: NextRequest) => {
           "type": "message",
           "channel": "C030Y645W3E",
           "user": "U0318FQNNGZ",
-          "text": "Hello hello can you hear me?",
+          "text": "can you hear me?",
           "channel_type": "im"
         });
     } catch(e: any) {
