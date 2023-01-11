@@ -11,4 +11,5 @@ crate-type = ["lib", "cdylib"]
 
 [dependencies]
 http_req_wasi = "0.10"
+serde_json = "1.0"
 slack-flows = { path = "../slack-sdk" }

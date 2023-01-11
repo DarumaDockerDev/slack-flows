@@ -112,6 +112,23 @@ pub fn channel_msg_received(team_name: &str, channel_name: &str) -> Option<Slack
     }
 }
 
+fn message_from_channel() -> Option<SlackMessage> {
+    unsafe {
+        let l = get_event_body_length();
+        let mut event_body = Vec::<u8>::with_capacity(l as usize);
+        let c = get_event_body(event_body.as_mut_ptr());
+        assert!(c == l);
+        event_body.set_len(c as usize);
+        match serde_json::from_slice::<Event>(&event_body) {
+            Ok(e) => match e.event.bot_id {
+                Some(_) => None,
+                None => Some(e.event),
+            },
+            Err(_) => None,
+        }
+    }
+}
+
 pub fn send_message_to_channel(team_name: &str, channel_name: &str, text: String) {
     unsafe {
         let mut flows_user = Vec::<u8>::with_capacity(100);
@@ -131,23 +148,6 @@ pub fn send_message_to_channel(team_name: &str, channel_name: &str, text: String
             if !res.status_code().is_success() {
                 set_error_log(writer.as_ptr(), writer.len() as i32);
             }
-        }
-    }
-}
-
-pub fn message_from_channel() -> Option<SlackMessage> {
-    unsafe {
-        let l = get_event_body_length();
-        let mut event_body = Vec::<u8>::with_capacity(l as usize);
-        let c = get_event_body(event_body.as_mut_ptr());
-        assert!(c == l);
-        event_body.set_len(c as usize);
-        match serde_json::from_slice::<Event>(&event_body) {
-            Ok(e) => match e.event.bot_id {
-                Some(_) => None,
-                None => Some(e.event),
-            },
-            Err(_) => None,
         }
     }
 }
