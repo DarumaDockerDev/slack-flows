@@ -79,3 +79,20 @@ export async function uploadFileToChannel(accessToken: string, channel: string, 
     body: formData as any
   });
 }
+
+export async function getUserInfo(accessToken: string, user: string) {
+  let res = await fetch(`https://slack.com/api/users.info?user=${user}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    }
+  });
+
+  const r = await res.json();
+
+  if (!r.ok) {
+      throw `Can not get info of user ${user}`;
+  }
+
+  return r.user;
+}

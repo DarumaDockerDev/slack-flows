@@ -32,11 +32,11 @@ pub struct SlackMessage {
     pub user: String,
     pub text: String,
     pub channel_type: String,
-    pub bot_id: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Event {
+    pub team_id: String,
     pub event: SlackMessage,
 }
 
@@ -120,10 +120,7 @@ fn message_from_channel() -> Option<SlackMessage> {
         assert!(c == l);
         event_body.set_len(c as usize);
         match serde_json::from_slice::<Event>(&event_body) {
-            Ok(e) => match e.event.bot_id {
-                Some(_) => None,
-                None => Some(e.event),
-            },
+            Ok(e) => Some(e.event),
             Err(_) => None,
         }
     }

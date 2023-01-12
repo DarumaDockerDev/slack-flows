@@ -1,5 +1,5 @@
 use http_req::request;
-use slack_flows::{Event, SlackMessage};
+use slack_flows::Event;
 
 const SLACK_API_PREFIX: &str = "http://127.0.0.1:3001/api";
 
@@ -11,10 +11,13 @@ extern "C" {
 
 #[no_mangle]
 pub unsafe fn message() {
-    if let Some(event) = message_from_channel() {
+    if let Some(e) = message_from_channel() {
         let mut writer = Vec::new();
         let res = request::get(
-            format!("{}/event/{}", SLACK_API_PREFIX, event.channel),
+            format!(
+                "{}/event/{}?team={}&user={}",
+                SLACK_API_PREFIX, e.event.channel, e.team_id, e.event.user
+            ),
             &mut writer,
         )
         .unwrap();
@@ -27,7 +30,7 @@ pub unsafe fn message() {
     }
 }
 
-fn message_from_channel() -> Option<SlackMessage> {
+fn message_from_channel() -> Option<Event> {
     unsafe {
         let l = get_event_body_length();
         let mut event_body = Vec::<u8>::with_capacity(l as usize);
@@ -35,10 +38,7 @@ fn message_from_channel() -> Option<SlackMessage> {
         assert!(c == l);
         event_body.set_len(c as usize);
         match serde_json::from_slice::<Event>(&event_body) {
-            Ok(e) => match e.event.bot_id {
-                Some(_) => None,
-                None => Some(e.event),
-            },
+            Ok(e) => Some(e),
             Err(_) => None,
         }
     }
